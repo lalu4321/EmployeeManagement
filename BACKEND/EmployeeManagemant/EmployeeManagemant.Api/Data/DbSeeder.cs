@@ -59,7 +59,7 @@ namespace EmployeeManagement.Api.Data
             await context.SaveChangesAsync();
         }
 
-        // Employee account for development testing
+        // Employee account 
         public static async Task SeedEmployeeAsync(
             ApplicationDbContext context,
             IConfiguration configuration)
@@ -77,7 +77,6 @@ namespace EmployeeManagement.Api.Data
                     "SeedEmployee email or password is missing.");
             }
 
-            // Link the test account to Employee ID 2
             const int employeeId = 2;
 
             var employee = await context.Employees

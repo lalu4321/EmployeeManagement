@@ -1,5 +1,4 @@
-﻿
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using EmployeeManagement.Api.Data;
@@ -29,64 +28,74 @@ namespace EmployeeManagement.Api.Controllers
         public async Task<IActionResult> Login(
             [FromBody] LoginRequest request)
         {
-            var email = request.Email.Trim();
-
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u =>
-                    u.Email == email && u.IsActive);
-
-            if (user == null ||
-                !BCrypt.Net.BCrypt.Verify(
-                    request.Password, user.PasswordHash))
+            try
             {
-                return Unauthorized(new
+                var email = request.Email.Trim();
+
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u =>
+                        u.Email == email && u.IsActive);
+
+                if (user == null ||
+                    !BCrypt.Net.BCrypt.Verify(
+                        request.Password, user.PasswordHash))
                 {
-                    message = "Invalid email or password."
+                    return Unauthorized(new
+                    {
+                        message = "Invalid email or password."
+                    });
+                }
+
+                if (user.Role == null)
+                {
+                    return Unauthorized(new
+                    {
+                        message = "User role is not configured."
+                    });
+                }
+
+                var key = _configuration["Jwt:Key"]!;
+                var issuer = _configuration["Jwt:Issuer"]!;
+                var audience = _configuration["Jwt:Audience"]!;
+
+                var claims = new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier,
+                        user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role.RoleName)
+                };
+
+                var signingKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(key));
+
+                var credentials = new SigningCredentials(
+                    signingKey, SecurityAlgorithms.HmacSha256);
+
+                var token = new JwtSecurityToken(
+                    issuer: issuer,
+                    audience: audience,
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddHours(2),
+                    signingCredentials: credentials);
+
+                return Ok(new LoginResponse
+                {
+                    Token = new JwtSecurityTokenHandler()
+                        .WriteToken(token),
+                    Email = user.Email,
+                    Role = user.Role.RoleName,
+                    EmployeeId = user.EmployeeId
                 });
             }
-
-            if (user.Role == null)
+            catch (Exception)
             {
-                return Unauthorized(new
+                return StatusCode(500, new
                 {
-                    message = "User role is not configured."
+                    message = "An unexpected error occurred during login."
                 });
             }
-
-            var key = _configuration["Jwt:Key"]!;
-            var issuer = _configuration["Jwt:Issuer"]!;
-            var audience = _configuration["Jwt:Audience"]!;
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier,
-                    user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.RoleName)
-            };
-
-            var signingKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(key));
-
-            var credentials = new SigningCredentials(
-                signingKey, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: credentials);
-
-            return Ok(new LoginResponse
-            {
-                Token = new JwtSecurityTokenHandler()
-                    .WriteToken(token),
-                Email = user.Email,
-                Role = user.Role.RoleName,
-                EmployeeId = user.EmployeeId
-            });
         }
     }
 }

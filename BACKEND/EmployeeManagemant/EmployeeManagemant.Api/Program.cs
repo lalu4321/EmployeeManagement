@@ -1,4 +1,5 @@
 using EmployeeManagement.Api.Data;
+using EmployeeManagement.Api.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -88,7 +89,6 @@ if (app.Environment.IsDevelopment())
     await DbSeeder.SeedEmployeeAsync(
         dbContext,
         app.Configuration);
-
 }
 
 // Map OpenAPI endpoint in Development
@@ -97,19 +97,18 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Configure middleware in the correct order
-app.UseCors("AllowReact");
+// Centralized exception handling — before other middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Configure middleware
+app.UseCors("AllowReact");
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
-
-app.UseStaticFiles();
 
 // Map controller endpoints
 app.MapControllers();
 
 app.Run();
-        
