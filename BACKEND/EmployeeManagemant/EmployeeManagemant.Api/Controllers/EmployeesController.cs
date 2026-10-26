@@ -1,5 +1,4 @@
-﻿
-using EmployeeManagement.Api.Data;
+﻿using EmployeeManagement.Api.Data;
 using EmployeeManagement.Api.DTOs;
 using EmployeeManagement.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -249,7 +248,8 @@ namespace EmployeeManagement.Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
+            var employee = await _context.Employees
+                .FindAsync(id);
 
             if (employee == null)
             {
@@ -259,7 +259,16 @@ namespace EmployeeManagement.Api.Controllers
                 });
             }
 
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.EmployeeId == id);
+
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+            }
+
             _context.Employees.Remove(employee);
+
             await _context.SaveChangesAsync();
 
             return NoContent();

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   LockKeyhole,
@@ -10,15 +9,14 @@ import {
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
 
-const schema = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+import api from "../api/axios";
+import { loginSchema } from "../validators/authValidator";
+import "../styles/login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -27,7 +25,7 @@ export default function Login() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -43,13 +41,17 @@ export default function Login() {
         password: values.password,
       });
 
+      // Check the required authentication response.
       if (!data?.token || !data?.role) {
-        setServerError("The server did not return a token or role.");
+        setServerError(
+          "The server did not return a token or role."
+        );
         return;
       }
 
       const role = String(data.role).trim().toLowerCase();
 
+      // Allow only supported application roles.
       if (!["admin", "employee"].includes(role)) {
         setServerError("Unsupported account role.");
         return;
@@ -58,7 +60,7 @@ export default function Login() {
       // Clear the previous tab session.
       sessionStorage.clear();
 
-      // Save the new login session.
+      // Store the authenticated session.
       sessionStorage.setItem("token", data.token);
       sessionStorage.setItem("role", role);
       sessionStorage.setItem(
@@ -73,7 +75,7 @@ export default function Login() {
         );
       }
 
-      // Redirect according to the user's role.
+      // Navigate according to the user's role.
       navigate(role === "admin" ? "/admin" : "/profile", {
         replace: true,
       });
@@ -102,70 +104,92 @@ export default function Login() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white">
+    <main className="login-page">
+      <section className="login-card">
+        <div className="login-logo">
           <Users size={28} />
         </div>
 
-        <h1 className="text-center text-3xl font-bold text-slate-900">
+        <h1 className="login-title">
           Employee Management
         </h1>
 
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="login-subtitle">
           Sign in to access your account
         </p>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="mt-8 space-y-5"
+          className="login-form"
+          noValidate
         >
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium"
-            >
+          {/* Email */}
+          <div className="login-field">
+            <label htmlFor="email" className="login-label">
               Email address
             </label>
 
-            <div className="flex items-center gap-3 rounded-lg border border-slate-300 px-3">
-              <Mail size={18} className="text-slate-400" />
+            <div
+              className={`login-input-wrapper ${
+                errors.email ? "login-input-invalid" : ""
+              }`}
+            >
+              <Mail
+                size={18}
+                className="login-input-icon"
+              />
 
               <input
                 id="email"
                 type="email"
                 autoComplete="username"
                 placeholder="you@company.com"
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby={
+                  errors.email ? "email-error" : undefined
+                }
                 {...register("email")}
-                className="w-full py-3 outline-none"
+                className="login-input"
               />
             </div>
 
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">
+              <p
+                id="email-error"
+                className="login-field-error"
+              >
                 {errors.email.message}
               </p>
             )}
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-medium"
-            >
+          {/* Password */}
+          <div className="login-field">
+            <label htmlFor="password" className="login-label">
               Password
             </label>
 
-            <div className="flex items-center gap-3 rounded-lg border border-slate-300 px-3">
-              <LockKeyhole size={18} className="text-slate-400" />
+            <div
+              className={`login-input-wrapper ${
+                errors.password ? "login-input-invalid" : ""
+              }`}
+            >
+              <LockKeyhole
+                size={18}
+                className="login-input-icon"
+              />
 
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="Enter your password"
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby={
+                  errors.password ? "password-error" : undefined
+                }
                 {...register("password")}
-                className="w-full py-3 outline-none"
+                className="login-input"
               />
 
               <button
@@ -176,7 +200,8 @@ export default function Login() {
                 aria-label={
                   showPassword ? "Hide password" : "Show password"
                 }
-                className="text-slate-500"
+                aria-pressed={showPassword}
+                className="login-password-toggle"
               >
                 {showPassword ? (
                   <EyeOff size={18} />
@@ -187,31 +212,36 @@ export default function Login() {
             </div>
 
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">
+              <p
+                id="password-error"
+                className="login-field-error"
+              >
                 {errors.password.message}
               </p>
             )}
           </div>
 
+          {/* Server error */}
           {serverError && (
             <p
               role="alert"
-              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              className="login-server-error"
             >
               {serverError}
             </p>
           )}
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="login-submit-button"
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="login-footer">
           Authorized users only
         </p>
       </section>

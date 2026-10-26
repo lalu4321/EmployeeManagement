@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios";
+import "../styles/editEmployee.css";
+
+import {
+  editEmployeeSchema,
+  validateProfilePicture,
+  employmentTypes,
+  employmentStatuses,
+} from "../validators/employeeValidator";
 
 const initialForm = {
   firstName: "",
@@ -16,19 +24,6 @@ const initialForm = {
   address: "",
 };
 
-const employmentTypes = [
-  "FullTime",
-  "PartTime",
-  "Contract",
-  "Intern",
-];
-
-const employmentStatuses = [
-  "Active",
-  "OnLeave",
-  "Inactive",
-];
-
 export default function EditEmployee() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,15 +31,30 @@ export default function EditEmployee() {
   const [form, setForm] = useState(initialForm);
   const [profilePicture, setProfilePicture] = useState(null);
   const [currentPicture, setCurrentPicture] = useState("");
+  const [picturePreview, setPicturePreview] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Generate a preview URL for a newly selected picture.
+  useEffect(() => {
+    if (!profilePicture) {
+      setPicturePreview("");
+      return undefined;
+    }
+
+    const objectUrl = URL.createObjectURL(profilePicture);
+    setPicturePreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [profilePicture]);
+
+  // Load existing employee details.
   useEffect(() => {
     let cancelled = false;
 
-    const loadEmployee = async () => {
+    async function loadEmployee() {
       try {
         setLoading(true);
         setError("");
@@ -79,9 +89,11 @@ export default function EditEmployee() {
           );
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    };
+    }
 
     loadEmployee();
 
@@ -90,81 +102,57 @@ export default function EditEmployee() {
     };
   }, [id]);
 
-  const handleChange = (event) => {
+  // Handle changes to employee fields.
+  function handleChange(event) {
     const { name, value } = event.target;
 
     setForm((previous) => ({
       ...previous,
       [name]: value,
     }));
-  };
 
-  const handlePictureChange = (event) => {
+    setError("");
+    setSuccess("");
+  }
+
+  // Validate a selected profile picture.
+  function handlePictureChange(event) {
     const file = event.target.files?.[0];
 
     setError("");
-    setProfilePicture(null);
+    setSuccess("");
 
-    if (!file) return;
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      setError("Choose a JPG, JPEG, PNG, or WEBP image.");
-      event.target.value = "";
+    if (!file) {
+      setProfilePicture(null);
       return;
     }
 
-    if (file.size === 0 || file.size > 5 * 1024 * 1024) {
-      setError("Image size must be between 1 byte and 5 MB.");
+    const pictureError = validateProfilePicture(file);
+
+    if (pictureError) {
+      setProfilePicture(null);
       event.target.value = "";
+      setError(pictureError);
       return;
     }
 
     setProfilePicture(file);
-  };
+  }
 
-  const handleSubmit = async (event) => {
+  // Validate and submit employee updates.
+  async function handleSubmit(event) {
     event.preventDefault();
+
     setError("");
     setSuccess("");
 
-    const requiredFields = [
-      ["firstName", "First name"],
-      ["lastName", "Last name"],
-      ["workEmail", "Work email"],
-      ["phoneNumber", "Phone number"],
-      ["department", "Department"],
-      ["jobTitle", "Job title"],
-      ["employmentType", "Employment type"],
-      ["joiningDate", "Joining date"],
-      ["employmentStatus", "Employment status"],
-      ["workLocation", "Work location"],
-    ];
+    const result = editEmployeeSchema.safeParse(form);
 
-    for (const [field, label] of requiredFields) {
-      if (!String(form[field] ?? "").trim()) {
-        setError(`${label} is required.`);
-        return;
-      }
-    }
-
-    const email = form.workEmail.trim();
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Enter a valid work email address.");
-      return;
-    }
-
-    if (
-      form.phoneNumber.trim().length < 7 ||
-      form.phoneNumber.trim().length > 20
-    ) {
-      setError("Enter a valid phone number.");
+    if (!result.success) {
+      setError(
+        result.error.issues[0]?.message ||
+          "Please check the form."
+      );
       return;
     }
 
@@ -175,13 +163,14 @@ export default function EditEmployee() {
 
       formData.append("id", String(id));
 
-      Object.entries(form).forEach(([key, value]) => {
+      Object.entries(result.data).forEach(([key, value]) => {
         formData.append(
           key,
           key === "workEmail" ? value.trim() : value ?? ""
         );
       });
 
+      // Include a picture only when a new one was selected.
       if (profilePicture) {
         formData.append("profilePicture", profilePicture);
       }
@@ -201,32 +190,6 @@ export default function EditEmployee() {
     } finally {
       setSaving(false);
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-64 items-center justify-center">
-        <p className="text-gray-600">Loading employee details...</p>
-      </div>
-    );
-  }
-
-  if (error && !form.firstName && !form.workEmail) {
-    return (
-      <div className="mx-auto max-w-3xl p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => navigate("/employees")}
-          className="mt-4 rounded-lg bg-gray-800 px-4 py-2 text-white hover:bg-gray-700"
-        >
-          Back to Employees
-        </button>
-      </div>
-    );
   }
 
   const pictureUrl = currentPicture
@@ -235,216 +198,237 @@ export default function EditEmployee() {
       : `https://localhost:7089${currentPicture}`
     : "";
 
-  return (
-    <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Edit Employee
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Update employee information and profile picture.
-          </p>
+  // Loading state.
+  if (loading) {
+    return (
+      <div className="edit-loading">
+        <p>Loading employee details...</p>
+      </div>
+    );
+  }
+
+  // Failed to load employee.
+  if (error && !form.firstName && !form.workEmail) {
+    return (
+      <div className="edit-error-page">
+        <div className="edit-alert edit-alert-error" role="alert">
+          {error}
         </div>
 
         <button
           type="button"
-          onClick={() => navigate(`/employees/${id}`)}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
+          onClick={() => navigate("/employees")}
+          className="edit-button edit-button-primary"
         >
-          Cancel
+          Back to Employees
         </button>
       </div>
+    );
+  }
 
-      {error && (
-        <div
-          role="alert"
-          className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-        >
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div
-          role="status"
-          className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700"
-        >
-          {success}
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7"
-      >
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-gray-800">
-            Profile Picture
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-5">
-            {profilePicture ? (
-              <img
-                src={URL.createObjectURL(profilePicture)}
-                alt="New profile preview"
-                className="h-20 w-20 rounded-full border object-cover"
-              />
-            ) : pictureUrl ? (
-              <img
-                src={pictureUrl}
-                alt="Current employee"
-                className="h-20 w-20 rounded-full border object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-2xl font-semibold text-gray-500">
-                {form.firstName.charAt(0).toUpperCase()}
-              </div>
-            )}
-
-            <div>
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                onChange={handlePictureChange}
-                className="block w-full max-w-xs text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:font-medium file:text-blue-700 hover:file:bg-blue-100"
-              />
-
-              <p className="mt-1 text-xs text-gray-500">
-                JPG, PNG, or WEBP. Maximum size: 5 MB.
-              </p>
-            </div>
+  return (
+    <main className="edit-employee-page">
+      <div className="edit-employee-container">
+        <header className="edit-page-header">
+          <div>
+            <h1>Edit Employee</h1>
+            <p>
+              Update employee information and profile picture.
+            </p>
           </div>
-        </section>
 
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-gray-800">
-            Personal Information
-          </h2>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              label="First Name"
-              name="firstName"
-              value={form.firstName}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Last Name"
-              name="lastName"
-              value={form.lastName}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Work Email"
-              name="workEmail"
-              type="email"
-              value={form.workEmail}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Phone Number"
-              name="phoneNumber"
-              type="tel"
-              value={form.phoneNumber}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Address"
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-            />
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-gray-800">
-            Employment Information
-          </h2>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              label="Department"
-              name="department"
-              value={form.department}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Job Title"
-              name="jobTitle"
-              value={form.jobTitle}
-              onChange={handleChange}
-              required
-            />
-
-            <FormField
-              label="Joining Date"
-              name="joiningDate"
-              type="date"
-              value={form.joiningDate}
-              onChange={handleChange}
-              required
-            />
-
-            <FormSelect
-              label="Employment Type"
-              name="employmentType"
-              value={form.employmentType}
-              onChange={handleChange}
-              options={employmentTypes}
-              required
-            />
-
-            <FormSelect
-              label="Employment Status"
-              name="employmentStatus"
-              value={form.employmentStatus}
-              onChange={handleChange}
-              options={employmentStatuses}
-              required
-            />
-
-            <FormField
-              label="Work Location"
-              name="workLocation"
-              value={form.workLocation}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        </section>
-
-        <div className="flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-5">
           <button
             type="button"
             onClick={() => navigate(`/employees/${id}`)}
+            className="edit-button edit-button-secondary"
             disabled={saving}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
             Cancel
           </button>
+        </header>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        {error && (
+          <div
+            role="alert"
+            className="edit-alert edit-alert-error"
           >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </form>
-    </div>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div
+            role="status"
+            className="edit-alert edit-alert-success"
+          >
+            {success}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="edit-employee-form"
+        >
+          {/* Profile picture */}
+          <section className="edit-form-section">
+            <h2>Profile Picture</h2>
+
+            <div className="edit-picture-row">
+              {picturePreview || pictureUrl ? (
+                <img
+                  src={picturePreview || pictureUrl}
+                  alt="Employee profile"
+                  className="edit-profile-picture"
+                />
+              ) : (
+                <div className="edit-picture-placeholder">
+                  {form.firstName.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
+
+              <div className="edit-picture-input">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={handlePictureChange}
+                />
+
+                <p>
+                  JPG, PNG, or WEBP. Maximum size: 5 MB.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Personal information */}
+          <section className="edit-form-section">
+            <h2>Personal Information</h2>
+
+            <div className="edit-form-grid">
+              <FormField
+                label="First Name"
+                name="firstName"
+                value={form.firstName}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Last Name"
+                name="lastName"
+                value={form.lastName}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Work Email"
+                name="workEmail"
+                type="email"
+                value={form.workEmail}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Phone Number"
+                name="phoneNumber"
+                type="tel"
+                value={form.phoneNumber}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Address"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+              />
+            </div>
+          </section>
+
+          {/* Employment information */}
+          <section className="edit-form-section">
+            <h2>Employment Information</h2>
+
+            <div className="edit-form-grid">
+              <FormField
+                label="Department"
+                name="department"
+                value={form.department}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Job Title"
+                name="jobTitle"
+                value={form.jobTitle}
+                onChange={handleChange}
+                required
+              />
+
+              <FormField
+                label="Joining Date"
+                name="joiningDate"
+                type="date"
+                value={form.joiningDate}
+                onChange={handleChange}
+                required
+              />
+
+              <FormSelect
+                label="Employment Type"
+                name="employmentType"
+                value={form.employmentType}
+                onChange={handleChange}
+                options={employmentTypes}
+                required
+              />
+
+              <FormSelect
+                label="Employment Status"
+                name="employmentStatus"
+                value={form.employmentStatus}
+                onChange={handleChange}
+                options={employmentStatuses}
+                required
+              />
+
+              <FormField
+                label="Work Location"
+                name="workLocation"
+                value={form.workLocation}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </section>
+
+          {/* Form actions */}
+          <div className="edit-form-actions">
+            <button
+              type="button"
+              onClick={() => navigate(`/employees/${id}`)}
+              disabled={saving}
+              className="edit-button edit-button-secondary"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="edit-button edit-button-primary"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
   );
 }
 
@@ -457,13 +441,10 @@ function FormField({
   required = false,
 }) {
   return (
-    <div>
-      <label
-        htmlFor={name}
-        className="mb-1.5 block text-sm font-medium text-gray-700"
-      >
+    <div className="edit-form-field">
+      <label htmlFor={name}>
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="edit-required"> *</span>}
       </label>
 
       <input
@@ -473,7 +454,8 @@ function FormField({
         value={value}
         onChange={onChange}
         required={required}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        maxLength={name === "address" ? 300 : undefined}
+        aria-invalid={false}
       />
     </div>
   );
@@ -488,13 +470,10 @@ function FormSelect({
   required = false,
 }) {
   return (
-    <div>
-      <label
-        htmlFor={name}
-        className="mb-1.5 block text-sm font-medium text-gray-700"
-      >
+    <div className="edit-form-field">
+      <label htmlFor={name}>
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="edit-required"> *</span>}
       </label>
 
       <select
@@ -503,13 +482,18 @@ function FormSelect({
         value={value}
         onChange={onChange}
         required={required}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
       >
         <option value="">Select {label}</option>
 
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {option === "FullTime"
+              ? "Full Time"
+              : option === "PartTime"
+                ? "Part Time"
+                : option === "OnLeave"
+                  ? "On Leave"
+                  : option}
           </option>
         ))}
       </select>

@@ -1,0 +1,419 @@
+
+.view-employee-page {
+  min-height: 100vh;
+  padding: 32px;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.view-employee-container {
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+/* ========================================
+   LOADING SCREEN
+======================================== */
+
+.view-employee-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background-color: #f8fafc;
+}
+
+.view-employee-loading p {
+  margin: 0;
+  color: #475569;
+  font-size: 15px;
+}
+
+/* ========================================
+   ERROR SCREEN
+======================================== */
+
+.view-employee-error-page {
+  min-height: 100vh;
+  padding: 32px 24px;
+  background-color: #f8fafc;
+}
+
+.view-employee-error-card {
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+.view-employee-error-message {
+  margin: 0;
+  color: #dc2626;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* ========================================
+   BUTTONS
+======================================== */
+
+.view-employee-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.view-employee-button:focus-visible,
+.view-employee-back-link:focus-visible {
+  outline: 3px solid #a5b4fc;
+  outline-offset: 3px;
+}
+
+.view-employee-button-primary {
+  margin-top: 16px;
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+
+.view-employee-button-primary:hover {
+  background-color: #4338ca;
+}
+
+.view-employee-button-secondary {
+  border-color: #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+}
+
+.view-employee-button-secondary:hover {
+  background-color: #f8fafc;
+}
+
+/* ========================================
+   BACK NAVIGATION
+======================================== */
+
+.view-employee-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.view-employee-back-link:hover {
+  color: #4f46e5;
+}
+
+/* ========================================
+   MAIN EMPLOYEE CARD
+======================================== */
+
+.view-employee-card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+}
+
+/* ========================================
+   EMPLOYEE HEADER
+======================================== */
+
+.view-employee-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+
+.view-employee-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+}
+
+.view-employee-avatar,
+.view-employee-avatar-placeholder {
+  display: flex;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+}
+
+.view-employee-avatar {
+  object-fit: cover;
+  background-color: #ffffff;
+}
+
+.view-employee-avatar-placeholder {
+  background-color: rgb(255 255 255 / 20%);
+  color: #ffffff;
+}
+
+.view-employee-identity-details {
+  min-width: 0;
+}
+
+.view-employee-name {
+  margin: 0;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.view-employee-job-title {
+  margin: 5px 0 0;
+  color: #e0e7ff;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.view-employee-id {
+  margin: 5px 0 0;
+  color: #e0e7ff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ========================================
+   EDIT EMPLOYEE BUTTON
+======================================== */
+
+.view-employee-edit-button {
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #4338ca;
+}
+
+.view-employee-edit-button:hover {
+  background-color: #eef2ff;
+}
+
+/* ========================================
+   EMPLOYEE DETAILS SECTION
+======================================== */
+
+.view-employee-details-section {
+  padding: 32px;
+}
+
+.view-employee-details-heading {
+  margin: 0 0 20px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ========================================
+   DETAILS GRID
+======================================== */
+
+.view-employee-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.view-employee-detail-item {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.view-employee-detail-item:hover {
+  border-color: #c7d2fe;
+  background-color: #fafaff;
+}
+
+/* ========================================
+   DETAIL LABEL
+======================================== */
+
+.view-employee-detail-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.view-employee-detail-label svg {
+  flex-shrink: 0;
+}
+
+.view-employee-detail-label p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ========================================
+   DETAIL VALUE
+======================================== */
+
+.view-employee-detail-value {
+  margin: 8px 0 0;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ========================================
+   BOTTOM ACTIONS
+======================================== */
+
+.view-employee-bottom-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
+
+@media (min-width: 640px) {
+  .view-employee-page {
+    padding: 32px;
+  }
+
+  .view-employee-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px;
+  }
+
+  .view-employee-edit-button {
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .view-employee-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .view-employee-details-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .view-employee-page {
+    padding: 20px 12px;
+  }
+
+  .view-employee-back-link {
+    margin-bottom: 18px;
+  }
+
+  .view-employee-header {
+    padding: 20px 16px;
+  }
+
+  .view-employee-identity {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .view-employee-avatar,
+  .view-employee-avatar-placeholder {
+    width: 64px;
+    height: 64px;
+  }
+
+  .view-employee-name {
+    font-size: 20px;
+  }
+
+  .view-employee-details-section {
+    padding: 20px 16px;
+  }
+
+  .view-employee-details-heading {
+    font-size: 17px;
+  }
+
+  .view-employee-bottom-actions {
+    flex-direction: column;
+  }
+
+  .view-employee-bottom-actions .view-employee-button {
+    width: 100%;
+  }
+
+  .view-employee-error-page {
+    padding: 20px 12px;
+  }
+
+  .view-employee-error-card {
+    padding: 20px 16px;
+  }
+}
+
+/* ========================================
+   REDUCED MOTION
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .view-employee-button,
+  .view-employee-back-link,
+  .view-employee-detail-item {
+    transition: none;
+  }
+}

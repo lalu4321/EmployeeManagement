@@ -1,4 +1,3 @@
-
 using EmployeeManagement.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

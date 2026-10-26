@@ -1,5 +1,4 @@
-﻿
-namespace EmployeeManagement.Api.DTOs
+﻿namespace EmployeeManagement.Api.DTOs
 {
     public class LoginResponse
     {

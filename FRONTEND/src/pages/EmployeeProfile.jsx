@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import api from "../api/axios";
+import "../styles/employeeProfile.css";
 
 export default function EmployeeProfile() {
   const navigate = useNavigate();
@@ -45,8 +46,10 @@ export default function EmployeeProfile() {
       } catch (err) {
         if (cancelled) return;
 
-        if (err.response?.status === 401 ||
-            err.response?.status === 403) {
+        if (
+          err.response?.status === 401 ||
+          err.response?.status === 403
+        ) {
           sessionStorage.clear();
           navigate("/login", { replace: true });
           return;
@@ -54,7 +57,7 @@ export default function EmployeeProfile() {
 
         setError(
           err.response?.data?.message ||
-          "Unable to load employee details. Please try again."
+            "Unable to load employee details. Please try again."
         );
       } finally {
         if (!cancelled) {
@@ -78,10 +81,12 @@ export default function EmployeeProfile() {
   const getValue = (...keys) => {
     for (const key of keys) {
       const value = employee?.[key];
+
       if (value !== null && value !== undefined && value !== "") {
         return value;
       }
     }
+
     return "Not provided";
   };
 
@@ -180,9 +185,9 @@ export default function EmployeeProfile() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-3 text-gray-600">
-          <LoaderCircle className="h-6 w-6 animate-spin" />
+      <div className="profile-loading-page">
+        <div className="profile-loading-content">
+          <LoaderCircle className="profile-loading-icon" />
           <span>Loading your profile...</span>
         </div>
       </div>
@@ -191,25 +196,27 @@ export default function EmployeeProfile() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <AlertCircle className="mx-auto mb-3 h-10 w-10 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-800">
+      <div className="profile-error-page">
+        <div className="profile-error-card">
+          <AlertCircle className="profile-error-icon" />
+
+          <h2 className="profile-error-title">
             Profile Loading Failed
           </h2>
-          <p className="mt-2 text-sm text-gray-600">{error}</p>
 
-          <div className="mt-6 flex justify-center gap-3">
+          <p className="profile-error-message">{error}</p>
+
+          <div className="profile-error-actions">
             <button
               onClick={() => window.location.reload()}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              className="profile-button profile-button-primary"
             >
               Try Again
             </button>
 
             <button
               onClick={logout}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
+              className="profile-button profile-button-secondary"
             >
               Logout
             </button>
@@ -220,21 +227,22 @@ export default function EmployeeProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+    <div className="employee-profile-page">
+      <header className="profile-header">
+        <div className="profile-header-content">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="profile-portal-title">
               Employee Portal
             </h1>
-            <p className="text-sm text-gray-500">
+
+            <p className="profile-header-subtitle">
               My Profile
             </p>
           </div>
 
           <button
             onClick={logout}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            className="profile-logout-button"
           >
             <LogOut size={17} />
             Logout
@@ -242,12 +250,12 @@ export default function EmployeeProfile() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="h-32 bg-gradient-to-r from-blue-700 to-indigo-500" />
+      <main className="profile-main">
+        <section className="profile-hero-card">
+          <div className="profile-banner" />
 
-          <div className="px-6 pb-6 sm:px-8">
-            <div className="-mt-12 flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="profile-hero-content">
+            <div className="profile-identity">
               {imageUrl ? (
                 <img
                   src={imageUrl}
@@ -255,25 +263,26 @@ export default function EmployeeProfile() {
                   onError={(event) => {
                     event.currentTarget.style.display = "none";
                   }}
-                  className="h-24 w-24 rounded-2xl border-4 border-white bg-white object-cover shadow"
+                  className="profile-avatar-image"
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-blue-100 text-blue-700 shadow">
+                <div className="profile-avatar-placeholder">
                   <UserRound size={42} />
                 </div>
               )}
 
-              <div className="pb-1">
-                <h2 className="text-2xl font-bold text-gray-900">
+              <div className="profile-identity-details">
+                <h2 className="profile-employee-name">
                   {fullName}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+
+                <p className="profile-job-title">
                   {getValue("jobTitle", "JobTitle")}
                 </p>
               </div>
 
-              <div className="sm:ml-auto sm:pb-2">
-                <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+              <div className="profile-status-wrapper">
+                <span className="profile-status-badge">
                   {getValue(
                     "employmentStatus",
                     "EmploymentStatus"
@@ -284,29 +293,28 @@ export default function EmployeeProfile() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Personal & Employment Details
+        <section className="profile-details-card">
+          <div className="profile-details-heading">
+            <h3 className="profile-details-title">
+              Personal &amp; Employment Details
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+
+            <p className="profile-details-subtitle">
               Your employee information
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="profile-fields-grid">
             {fields.map(({ label, value, icon: Icon }) => (
-              <div
-                key={label}
-                className="flex min-w-0 gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+              <div className="profile-detail-item" key={label}>
+                <div className="profile-detail-icon">
                   <Icon size={19} />
                 </div>
 
-                <div className="min-w-0">
-                  <p className="text-sm text-gray-500">{label}</p>
-                  <p className="mt-1 break-words text-sm font-medium text-gray-900">
+                <div className="profile-detail-content">
+                  <p className="profile-detail-label">{label}</p>
+
+                  <p className="profile-detail-value">
                     {value}
                   </p>
                 </div>
@@ -315,7 +323,7 @@ export default function EmployeeProfile() {
           </div>
         </section>
 
-        <p className="mt-5 text-center text-xs text-gray-400">
+        <p className="profile-footer">
           Employee Management System
         </p>
       </main>

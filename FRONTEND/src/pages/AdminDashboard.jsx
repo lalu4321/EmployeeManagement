@@ -21,13 +21,11 @@ import {
   TrendingUp,
   ChevronRight,
 } from "lucide-react";
-import api from "../api/axios";
 
-const styles = {
-  card: "rounded-2xl border border-slate-200 bg-white shadow-sm",
-  button:
-    "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
-};
+import api from "../api/axios";
+import "../styles/dashboard.css";
+
+const API_BASE_URL = "https://localhost:7089";
 
 function getFullName(employee) {
   return [employee.firstName, employee.lastName]
@@ -37,7 +35,8 @@ function getFullName(employee) {
 
 function getInitials(employee) {
   const initials =
-    `${employee.firstName?.[0] || ""}${employee.lastName?.[0] || ""}`.toUpperCase();
+    `${employee.firstName?.[0] || ""}${employee.lastName?.[0] || ""}`
+      .toUpperCase();
 
   return initials || "E";
 }
@@ -75,35 +74,24 @@ function getProfilePictureUrl(path) {
     return path;
   }
 
-  return `https://localhost:7089${path.startsWith("/") ? "" : "/"}${path}`;
+  return `${API_BASE_URL}/${path.replace(/^\/+/, "")}`;
 }
 
 function StatusBadge({ status }) {
   const normalized = status.toLowerCase();
 
-  const colors =
+  const statusClass =
     normalized === "active"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+      ? "dashboard-status-active"
       : normalized === "on leave"
-        ? "bg-amber-50 text-amber-700 ring-amber-600/20"
+        ? "dashboard-status-on-leave"
         : normalized === "terminated"
-          ? "bg-red-50 text-red-700 ring-red-600/20"
-          : "bg-slate-100 text-slate-600 ring-slate-500/20";
-
-  const dot =
-    normalized === "active"
-      ? "bg-emerald-500"
-      : normalized === "on leave"
-        ? "bg-amber-500"
-        : normalized === "terminated"
-          ? "bg-red-500"
-          : "bg-slate-400";
+          ? "dashboard-status-terminated"
+          : "dashboard-status-default";
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset ${colors}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+    <span className={`dashboard-status-badge ${statusClass}`}>
+      <span className="dashboard-status-dot" />
       {status}
     </span>
   );
@@ -118,29 +106,23 @@ function StatCard({
   loading,
 }) {
   return (
-    <article
-      className={`${styles.card} group p-5 transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500">{title}</p>
+    <article className="dashboard-stat-card">
+      <div className="dashboard-stat-content">
+        <div className="dashboard-stat-text">
+          <p className="dashboard-stat-label">{title}</p>
 
-          <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+          <p className="dashboard-stat-value">
             {loading ? (
-              <span className="inline-block h-9 w-14 animate-pulse rounded-lg bg-slate-100" />
+              <span className="dashboard-stat-skeleton" />
             ) : (
               value
             )}
           </p>
 
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            {description}
-          </p>
+          <p className="dashboard-stat-description">{description}</p>
         </div>
 
-        <div
-          className={`rounded-2xl p-3 transition group-hover:scale-105 ${color}`}
-        >
+        <div className={`dashboard-stat-icon ${color}`}>
           <Icon size={23} />
         </div>
       </div>
@@ -165,12 +147,7 @@ export default function AdminDashboard() {
 
   // Clear authentication and return to login.
   const signOut = useCallback(() => {
-    [
-      "token",
-      "role",
-      "email",
-      "employeeId",
-    ].forEach((key) => {
+    ["token", "role", "email", "employeeId"].forEach((key) => {
       sessionStorage.removeItem(key);
       localStorage.removeItem(key);
     });
@@ -184,10 +161,7 @@ export default function AdminDashboard() {
       const token = sessionStorage.getItem("token");
       const role = sessionStorage.getItem("role");
 
-      if (
-        !token ||
-        role?.toLowerCase() !== "admin"
-      ) {
+      if (!token || role?.toLowerCase() !== "admin") {
         signOut();
         return;
       }
@@ -329,82 +303,72 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="flex min-h-screen">
+    <div className="dashboard-page">
+      <div className="dashboard-layout">
         {/* Sidebar */}
-        <aside className="hidden w-64 shrink-0 flex-col bg-slate-950 text-white lg:flex">
-          <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500 shadow-lg shadow-indigo-950/40">
+        <aside className="dashboard-sidebar">
+          <div className="dashboard-brand">
+            <div className="dashboard-brand-icon">
               <Users size={24} />
             </div>
 
-            <div>
-              <p className="text-lg font-bold tracking-tight">
-                PeopleHub
-              </p>
-              <p className="text-xs text-slate-400">
+            <div className="dashboard-brand-text">
+              <p className="dashboard-brand-name">PeopleHub</p>
+              <p className="dashboard-brand-subtitle">
                 Employee Management
               </p>
             </div>
           </div>
 
-          <div className="px-5 pb-3 pt-7">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              Workspace
-            </p>
+          <div className="dashboard-sidebar-section-label">
+            <p>Workspace</p>
           </div>
 
-          <nav className="flex-1 space-y-2 px-4">
+          <nav className="dashboard-navigation">
             <button
               type="button"
               onClick={() => navigate("/admin")}
-              className="flex w-full items-center gap-3 rounded-xl border border-indigo-400/20 bg-indigo-500/15 px-4 py-3 text-left text-sm font-semibold text-indigo-300"
+              className="dashboard-nav-button dashboard-nav-active"
             >
               <LayoutDashboard size={19} />
-              Dashboard
+              <span>Dashboard</span>
             </button>
 
             <button
               type="button"
               onClick={() => navigate("/employees")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+              className="dashboard-nav-button"
             >
               <Users size={19} />
-              Employee Directory
-              <ChevronRight size={16} className="ml-auto" />
+              <span>Employee Directory</span>
+              <ChevronRight size={16} className="dashboard-nav-arrow" />
             </button>
 
             <button
               type="button"
               onClick={() => navigate("/employees/new")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+              className="dashboard-nav-button"
             >
               <UserPlus size={19} />
-              Add Employee
-              <ChevronRight size={16} className="ml-auto" />
+              <span>Add Employee</span>
+              <ChevronRight size={16} className="dashboard-nav-arrow" />
             </button>
           </nav>
 
-          <div className="m-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-bold text-indigo-300">
-                A
-              </div>
+          <div className="dashboard-sidebar-account">
+            <div className="dashboard-account-info">
+              <div className="dashboard-account-avatar">A</div>
 
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">
-                  Administrator
-                </p>
-                <p className="mt-1 break-all text-xs text-slate-400">
-                  {adminEmail}
-                </p>
+              <div className="dashboard-account-details">
+                <p className="dashboard-account-name">Administrator</p>
+                <p className="dashboard-account-email">{adminEmail}</p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={signOut}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
+              className="dashboard-signout-button"
             >
               <LogOut size={17} />
               Sign out
@@ -413,43 +377,39 @@ export default function AdminDashboard() {
         </aside>
 
         {/* Main content */}
-        <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 flex min-h-[76px] items-center justify-between gap-4 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-xl sm:px-7 lg:px-10">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white lg:hidden">
+        <div className="dashboard-main">
+          <header className="dashboard-topbar">
+            <div className="dashboard-topbar-brand">
+              <div className="dashboard-mobile-brand-icon">
                 <Users size={21} />
               </div>
 
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-slate-900 sm:text-base">
-                  Admin Workspace
-                </p>
-                <p className="hidden text-xs text-slate-500 sm:block">
+              <div className="dashboard-topbar-heading">
+                <p className="dashboard-topbar-title">Admin Workspace</p>
+                <p className="dashboard-topbar-subtitle">
                   Manage your team and employee records
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="dashboard-topbar-actions">
               <button
                 type="button"
                 onClick={() => loadEmployees(true)}
                 disabled={refreshing}
-                className={`${styles.button} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
+                className="dashboard-button dashboard-refresh-button"
               >
                 <RefreshCw
                   size={16}
-                  className={refreshing ? "animate-spin" : ""}
+                  className={refreshing ? "dashboard-spin" : ""}
                 />
-                <span className="hidden sm:inline">
-                  {refreshing ? "Refreshing..." : "Refresh"}
-                </span>
+                <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate("/employees")}
-                className="rounded-xl p-2.5 text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600 lg:hidden"
+                className="dashboard-mobile-action"
                 title="Employee directory"
                 aria-label="Employee directory"
               >
@@ -459,7 +419,7 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={signOut}
-                className="rounded-xl p-2.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600 lg:hidden"
+                className="dashboard-mobile-action dashboard-mobile-signout"
                 title="Sign out"
                 aria-label="Sign out"
               >
@@ -468,24 +428,24 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          <main className="mx-auto max-w-[1600px] p-4 sm:p-7 lg:p-10">
+          <main className="dashboard-content">
             {/* Welcome banner */}
-            <section className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-600 p-6 text-white shadow-lg shadow-indigo-900/10 sm:p-9">
-              <div className="pointer-events-none absolute -right-10 -top-24 h-72 w-72 rounded-full border-[35px] border-white/5" />
-              <div className="pointer-events-none absolute -bottom-32 right-40 h-64 w-64 rounded-full bg-white/5" />
+            <section className="dashboard-welcome">
+              <div className="dashboard-welcome-decoration dashboard-decoration-one" />
+              <div className="dashboard-welcome-decoration dashboard-decoration-two" />
 
-              <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-                <div>
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-indigo-50">
-                    <span className="h-2 w-2 rounded-full bg-emerald-300" />
+              <div className="dashboard-welcome-content">
+                <div className="dashboard-welcome-text">
+                  <div className="dashboard-welcome-badge">
+                    <span className="dashboard-welcome-dot" />
                     Administrator dashboard
                   </div>
 
-                  <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  <h1 className="dashboard-welcome-title">
                     Welcome back!
                   </h1>
 
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-indigo-100 sm:text-base">
+                  <p className="dashboard-welcome-description">
                     Your team at a glance. Manage employee information,
                     monitor statuses, and keep everything organised.
                   </p>
@@ -494,7 +454,7 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => navigate("/employees/new")}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
+                  className="dashboard-welcome-button"
                 >
                   <UserPlus size={18} />
                   Add New Employee
@@ -505,22 +465,22 @@ export default function AdminDashboard() {
 
             {/* Error notification */}
             {error && (
-              <div
-                role="alert"
-                className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-              >
-                <AlertCircle size={19} className="mt-0.5 shrink-0" />
+              <div className="dashboard-error-alert" role="alert">
+                <AlertCircle
+                  size={19}
+                  className="dashboard-error-icon"
+                />
 
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">
+                <div className="dashboard-error-content">
+                  <p className="dashboard-error-title">
                     Something went wrong
                   </p>
-                  <p className="mt-1">{error}</p>
+                  <p className="dashboard-error-message">{error}</p>
 
                   <button
                     type="button"
                     onClick={() => loadEmployees(true)}
-                    className="mt-2 font-semibold underline"
+                    className="dashboard-error-retry"
                   >
                     Try again
                   </button>
@@ -530,7 +490,7 @@ export default function AdminDashboard() {
                   type="button"
                   onClick={() => setError("")}
                   aria-label="Dismiss error"
-                  className="rounded-lg p-1 hover:bg-red-100"
+                  className="dashboard-error-dismiss"
                 >
                   <X size={17} />
                 </button>
@@ -538,30 +498,28 @@ export default function AdminDashboard() {
             )}
 
             {/* Statistics */}
-            <section className="mb-9">
-              <div className="mb-4 flex items-center justify-between gap-3">
+            <section className="dashboard-section">
+              <div className="dashboard-section-heading">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Team overview
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <h2 className="dashboard-section-title">Team overview</h2>
+                  <p className="dashboard-section-description">
                     A summary of your employee records
                   </p>
                 </div>
 
-                <span className="hidden items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-500 ring-1 ring-slate-200 sm:inline-flex">
-                  <TrendingUp size={14} className="text-emerald-600" />
+                <span className="dashboard-live-badge">
+                  <TrendingUp size={14} />
                   Live data
                 </span>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="dashboard-stats-grid">
                 <StatCard
                   title="Total Employees"
                   value={stats.total}
                   description="All employee records"
                   icon={Users}
-                  color="bg-indigo-50 text-indigo-600"
+                  color="dashboard-stat-indigo"
                   loading={loading}
                 />
 
@@ -570,7 +528,7 @@ export default function AdminDashboard() {
                   value={stats.active}
                   description="Currently marked active"
                   icon={UserCheck}
-                  color="bg-emerald-50 text-emerald-600"
+                  color="dashboard-stat-emerald"
                   loading={loading}
                 />
 
@@ -579,7 +537,7 @@ export default function AdminDashboard() {
                   value={stats.inactive}
                   description={`${stats.onLeave} currently on leave`}
                   icon={UserX}
-                  color="bg-amber-50 text-amber-600"
+                  color="dashboard-stat-amber"
                   loading={loading}
                 />
 
@@ -588,95 +546,89 @@ export default function AdminDashboard() {
                   value={stats.departments}
                   description="Unique departments represented"
                   icon={Building2}
-                  color="bg-sky-50 text-sky-600"
+                  color="dashboard-stat-sky"
                   loading={loading}
                 />
               </div>
             </section>
 
             {/* Quick actions */}
-            <section className="mb-9">
-              <h2 className="mb-4 text-lg font-bold text-slate-900">
+            <section className="dashboard-section">
+              <h2 className="dashboard-section-title dashboard-quick-title">
                 Quick actions
               </h2>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="dashboard-quick-grid">
                 <button
                   type="button"
                   onClick={() => navigate("/employees")}
-                  className={`${styles.card} group flex items-center gap-4 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md sm:p-6`}
+                  className="dashboard-quick-card dashboard-quick-directory"
                 >
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 transition group-hover:bg-indigo-600 group-hover:text-white">
+                  <div className="dashboard-quick-icon">
                     <Users size={25} />
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-slate-900">
+                  <div className="dashboard-quick-content">
+                    <p className="dashboard-quick-card-title">
                       Employee Directory
                     </p>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                    <p className="dashboard-quick-description">
                       Search, view, edit and manage employee records.
                     </p>
                   </div>
 
-                  <ArrowRight
-                    size={20}
-                    className="shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-indigo-600"
-                  />
+                  <ArrowRight size={20} className="dashboard-quick-arrow" />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigate("/employees/new")}
-                  className={`${styles.card} group flex items-center gap-4 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md sm:p-6`}
+                  className="dashboard-quick-card dashboard-quick-create"
                 >
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition group-hover:bg-emerald-600 group-hover:text-white">
+                  <div className="dashboard-quick-icon">
                     <UserPlus size={25} />
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-slate-900">
+                  <div className="dashboard-quick-content">
+                    <p className="dashboard-quick-card-title">
                       Create Employee Record
                     </p>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                    <p className="dashboard-quick-description">
                       Add an employee and create their login credentials.
                     </p>
                   </div>
 
-                  <ArrowRight
-                    size={20}
-                    className="shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-emerald-600"
-                  />
+                  <ArrowRight size={20} className="dashboard-quick-arrow" />
                 </button>
               </div>
             </section>
 
             {/* Employee table */}
-            <section className={`${styles.card} overflow-hidden`}>
-              <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-slate-900">
+            <section className="dashboard-employee-card">
+              <div className="dashboard-employee-header">
+                <div className="dashboard-employee-heading">
+                  <div className="dashboard-employee-title-row">
+                    <h2 className="dashboard-section-title">
                       Employee Overview
                     </h2>
 
                     {!loading && (
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                      <span className="dashboard-result-count">
                         {filteredEmployees.length}
                       </span>
                     )}
                   </div>
 
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="dashboard-section-description">
                     Review and manage your latest employee records.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <div className="relative min-w-0 sm:w-64">
+                <div className="dashboard-employee-controls">
+                  <div className="dashboard-search-wrapper">
                     <Search
                       size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      className="dashboard-search-icon"
                     />
 
                     <input
@@ -685,14 +637,14 @@ export default function AdminDashboard() {
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Search employees..."
                       aria-label="Search employees"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+                      className="dashboard-search-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => navigate("/employees")}
-                    className={`${styles.button} border border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}
+                    className="dashboard-button dashboard-directory-button"
                   >
                     View Directory
                     <ArrowRight size={16} />
@@ -701,25 +653,25 @@ export default function AdminDashboard() {
               </div>
 
               {loading ? (
-                <div className="space-y-4 p-6">
-                  <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
-                  <div className="h-14 animate-pulse rounded-xl bg-slate-50" />
-                  <div className="h-14 animate-pulse rounded-xl bg-slate-50" />
-                  <div className="h-14 animate-pulse rounded-xl bg-slate-50" />
+                <div className="dashboard-table-loading">
+                  <div className="dashboard-table-skeleton dashboard-skeleton-heading" />
+                  <div className="dashboard-table-skeleton" />
+                  <div className="dashboard-table-skeleton" />
+                  <div className="dashboard-table-skeleton" />
                 </div>
               ) : filteredEmployees.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <div className="dashboard-empty-state">
+                  <div className="dashboard-empty-icon">
                     {search ? <Search size={26} /> : <Users size={26} />}
                   </div>
 
-                  <h3 className="mt-4 font-bold text-slate-900">
+                  <h3 className="dashboard-empty-title">
                     {search
                       ? "No matching employees"
                       : "No employee records yet"}
                   </h3>
 
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                  <p className="dashboard-empty-description">
                     {search
                       ? "Try another name, email, department or status."
                       : "Create your first employee record to get started."}
@@ -729,7 +681,7 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => navigate("/employees/new")}
-                      className={`${styles.button} mt-5 bg-indigo-600 text-white hover:bg-indigo-700`}
+                      className="dashboard-button dashboard-empty-add-button"
                     >
                       <UserPlus size={17} />
                       Add Employee
@@ -737,20 +689,20 @@ export default function AdminDashboard() {
                   )}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[900px] text-left">
-                    <thead className="bg-slate-50/80">
-                      <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
-                        <th className="px-6 py-4">Employee</th>
-                        <th className="px-6 py-4">Department</th>
-                        <th className="px-6 py-4">Job Title</th>
-                        <th className="px-6 py-4">Joining Date</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                <div className="dashboard-table-wrapper">
+                  <table className="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Job Title</th>
+                        <th>Joining Date</th>
+                        <th>Status</th>
+                        <th className="dashboard-actions-heading">Actions</th>
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody>
                       {filteredEmployees.slice(0, 8).map((employee) => {
                         const status = getStatus(employee);
                         const pictureUrl = getProfilePictureUrl(
@@ -758,12 +710,9 @@ export default function AdminDashboard() {
                         );
 
                         return (
-                          <tr
-                            key={employee.id}
-                            className="transition hover:bg-indigo-50/30"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
+                          <tr key={employee.id}>
+                            <td>
+                              <div className="dashboard-person-cell">
                                 {pictureUrl ? (
                                   <img
                                     src={pictureUrl}
@@ -771,64 +720,62 @@ export default function AdminDashboard() {
                                     onError={(event) => {
                                       event.currentTarget.style.display = "none";
                                     }}
-                                    className="h-11 w-11 shrink-0 rounded-full border border-slate-100 object-cover"
+                                    className="dashboard-avatar-image"
                                   />
                                 ) : (
-                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 text-sm font-bold text-indigo-700 ring-1 ring-indigo-100">
+                                  <div className="dashboard-avatar-placeholder">
                                     {getInitials(employee)}
                                   </div>
                                 )}
 
-                                <div className="min-w-0">
-                                  <p className="max-w-52 truncate text-sm font-bold text-slate-900">
-                                    {getFullName(employee) ||
-                                      "Unnamed employee"}
+                                <div className="dashboard-person-details">
+                                  <p className="dashboard-person-name">
+                                    {getFullName(employee) || "Unnamed employee"}
                                   </p>
 
-                                  <p className="mt-1 max-w-52 truncate text-xs text-slate-500">
-                                    {employee.workEmail ||
-                                      "No email provided"}
+                                  <p className="dashboard-person-email">
+                                    {employee.workEmail || "No email provided"}
                                   </p>
                                 </div>
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-sm text-slate-600">
-                              <span className="inline-flex items-center gap-2">
+                            <td>
+                              <span className="dashboard-table-detail">
                                 <Building2
                                   size={15}
-                                  className="text-slate-400"
+                                  className="dashboard-table-icon"
                                 />
                                 {employee.department || "—"}
                               </span>
                             </td>
 
-                            <td className="px-6 py-4 text-sm text-slate-600">
-                              <span className="inline-flex items-center gap-2">
+                            <td>
+                              <span className="dashboard-table-detail">
                                 <BriefcaseBusiness
                                   size={15}
-                                  className="text-slate-400"
+                                  className="dashboard-table-icon"
                                 />
                                 {employee.jobTitle || "—"}
                               </span>
                             </td>
 
-                            <td className="px-6 py-4 text-sm text-slate-600">
-                              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <td>
+                              <span className="dashboard-table-detail dashboard-date-detail">
                                 <CalendarDays
                                   size={15}
-                                  className="text-slate-400"
+                                  className="dashboard-table-icon"
                                 />
                                 {formatDate(employee.joiningDate)}
                               </span>
                             </td>
 
-                            <td className="px-6 py-4">
+                            <td>
                               <StatusBadge status={status} />
                             </td>
 
-                            <td className="px-6 py-4">
-                              <div className="flex justify-end gap-2">
+                            <td>
+                              <div className="dashboard-row-actions">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -836,7 +783,7 @@ export default function AdminDashboard() {
                                   }
                                   title="View employee"
                                   aria-label={`View ${getFullName(employee)}`}
-                                  className="rounded-lg border border-slate-200 p-2.5 text-sky-700 transition hover:border-sky-200 hover:bg-sky-50"
+                                  className="dashboard-action-button dashboard-view-button"
                                 >
                                   <Eye size={16} />
                                 </button>
@@ -844,13 +791,11 @@ export default function AdminDashboard() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    navigate(
-                                      `/employees/${employee.id}/edit`
-                                    )
+                                    navigate(`/employees/${employee.id}/edit`)
                                   }
                                   title="Edit employee"
                                   aria-label={`Edit ${getFullName(employee)}`}
-                                  className="rounded-lg border border-slate-200 p-2.5 text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-50"
+                                  className="dashboard-action-button dashboard-edit-button"
                                 >
                                   <Pencil size={16} />
                                 </button>
@@ -861,12 +806,12 @@ export default function AdminDashboard() {
                                   disabled={deletingId === employee.id}
                                   title="Delete employee"
                                   aria-label={`Delete ${getFullName(employee)}`}
-                                  className="rounded-lg border border-slate-200 p-2.5 text-red-600 transition hover:border-red-200 hover:bg-red-50"
+                                  className="dashboard-action-button dashboard-delete-button"
                                 >
                                   {deletingId === employee.id ? (
                                     <RefreshCw
                                       size={16}
-                                      className="animate-spin"
+                                      className="dashboard-spin"
                                     />
                                   ) : (
                                     <Trash2 size={16} />
@@ -883,15 +828,15 @@ export default function AdminDashboard() {
               )}
 
               {!loading && filteredEmployees.length > 8 && (
-                <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                  <p className="text-sm text-slate-500">
+                <div className="dashboard-table-footer">
+                  <p>
                     Showing 8 of {filteredEmployees.length} matching employees
                   </p>
 
                   <button
                     type="button"
                     onClick={() => navigate("/employees")}
-                    className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                    className="dashboard-view-all-button"
                   >
                     View all employees
                     <ArrowRight size={16} />
@@ -900,7 +845,7 @@ export default function AdminDashboard() {
               )}
             </section>
 
-            <footer className="py-8 text-center text-xs text-slate-400">
+            <footer className="dashboard-footer">
               PeopleHub · Employee Management System
             </footer>
           </main>
