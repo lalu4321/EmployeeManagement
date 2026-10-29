@@ -1,4 +1,4 @@
-  import {
+import {
   BrowserRouter,
   Navigate,
   Route,
@@ -14,14 +14,11 @@ import EmployeeProfile from "./pages/EmployeeProfile";
 import ViewEmployee from "./pages/ViewEmployee";
 
 function getSession() {
-  const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role")?.toLowerCase();
 
   return {
-    token,
     role,
-    isAuthenticated:
-      Boolean(token) && ["admin", "employee"].includes(role),
+    isAuthenticated: ["admin", "employee"].includes(role),
   };
 }
 
@@ -47,7 +44,6 @@ function ProtectedRoute({ role, children }) {
 function LoginRoute() {
   const session = getSession();
 
-  // If no valid session exists, always show the login page.
   if (!session.isAuthenticated) {
     return <Login />;
   }

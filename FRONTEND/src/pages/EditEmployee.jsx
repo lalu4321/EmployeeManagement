@@ -8,7 +8,7 @@ import {
   validateProfilePicture,
   employmentTypes,
   employmentStatuses,
-} from "../validators/employeeValidator";
+} from "../validators/validation";
 
 const initialForm = {
   firstName: "",

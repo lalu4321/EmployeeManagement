@@ -1,9 +1,9 @@
+using System.Text;
 using EmployeeManagement.Api.Data;
 using EmployeeManagement.Api.Middleware;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,11 +31,12 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
-// Configure JWT authentication
+// Configure JWT settings
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
         "JWT key is missing from appsettings.json.");
@@ -48,8 +49,13 @@ var jwtAudience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException(
         "JWT audience is missing from appsettings.json.");
 
+var signingKey = new SymmetricSecurityKey(
+    Encoding.UTF8.GetBytes(jwtKey));
+
+// Configure JWT authentication using the HttpOnly cookie
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters =
@@ -64,9 +70,21 @@ builder.Services
                 ValidateLifetime = true,
 
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtKey))
+                IssuerSigningKey = signingKey,
+
+                ClockSkew = TimeSpan.FromMinutes(1)
             };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                context.Token =
+                    context.Request.Cookies["accessToken"];
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Configure authorization
@@ -97,13 +115,15 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Centralized exception handling — before other middleware
+// Centralized exception handling
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure middleware
-app.UseCors("AllowReact");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseRouting();
+app.UseCors("AllowReact");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Users,
   UserPlus,
-  Search,
   LogOut,
   RefreshCw,
   LayoutDashboard,
@@ -20,6 +19,7 @@ import {
   X,
   TrendingUp,
   ChevronRight,
+  Search,
 } from "lucide-react";
 
 import api from "../api/axios";
@@ -34,11 +34,10 @@ function getFullName(employee) {
 }
 
 function getInitials(employee) {
-  const initials =
+  return (
     `${employee.firstName?.[0] || ""}${employee.lastName?.[0] || ""}`
-      .toUpperCase();
-
-  return initials || "E";
+      .toUpperCase() || "E"
+  );
 }
 
 function getStatus(employee) {
@@ -142,27 +141,31 @@ export default function AdminDashboard() {
 
   const adminEmail =
     sessionStorage.getItem("email") ||
-    localStorage.getItem("email") ||
     "Admin account";
 
-  // Clear authentication and return to login.
-  const signOut = useCallback(() => {
-    ["token", "role", "email", "employeeId"].forEach((key) => {
-      sessionStorage.removeItem(key);
-      localStorage.removeItem(key);
-    });
+  // Clear UI session information and delete the authentication cookie.
+  const signOut = useCallback(async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      ["token", "role", "email", "employeeId"].forEach((key) => {
+        sessionStorage.removeItem(key);
+        localStorage.removeItem(key);
+      });
 
-    navigate("/login", { replace: true });
+      navigate("/login", { replace: true });
+    }
   }, [navigate]);
 
-  // Load employee records.
+  // Load employee records using cookie authentication.
   const loadEmployees = useCallback(
     async (isRefresh = false) => {
-      const token = sessionStorage.getItem("token");
       const role = sessionStorage.getItem("role");
 
-      if (!token || role?.toLowerCase() !== "admin") {
-        signOut();
+      if (role?.toLowerCase() !== "admin") {
+        await signOut();
         return;
       }
 
@@ -192,11 +195,13 @@ export default function AdminDashboard() {
 
         setEmployees(list);
       } catch (err) {
-        if (
-          err.response?.status === 401 ||
-          err.response?.status === 403
-        ) {
-          signOut();
+        if (err.response?.status === 401) {
+          await signOut();
+          return;
+        }
+
+        if (err.response?.status === 403) {
+          setError("You do not have permission to view employee records.");
           return;
         }
 
@@ -283,17 +288,16 @@ export default function AdminDashboard() {
 
       window.alert("Employee deleted successfully.");
     } catch (err) {
-      if (
-        err.response?.status === 401 ||
-        err.response?.status === 403
-      ) {
-        signOut();
+      if (err.response?.status === 401) {
+        await signOut();
         return;
       }
 
       const message =
         err.response?.data?.message ||
-        "Unable to delete this employee. Please try again.";
+        (err.response?.status === 403
+          ? "You do not have permission to delete this employee."
+          : "Unable to delete this employee. Please try again.");
 
       setError(message);
       window.alert(message);

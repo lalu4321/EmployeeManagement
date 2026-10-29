@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // ========================================
@@ -49,10 +48,7 @@ export function getMinimumJoiningDate() {
 
 function isValidDateString(value) {
   if (typeof value !== "string") return false;
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
 
   const [year, month, day] = value.split("-").map(Number);
   const date = new Date(year, month - 1, day);
@@ -137,6 +133,21 @@ const addressSchema = z
   .max(300, "Address cannot exceed 300 characters.");
 
 // ========================================
+// LOGIN VALIDATION
+// ========================================
+
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required.")
+    .max(254, "Email cannot exceed 254 characters.")
+    .email("Enter a valid email address."),
+
+  password: z.string().min(1, "Password is required."),
+});
+
+// ========================================
 // PASSWORD VALIDATION
 // ========================================
 
@@ -207,6 +218,27 @@ export const editEmployeeSchema = z.object({
   employmentType: employmentTypeSchema,
   joiningDate: joiningDateSchema,
   employmentStatus: employmentStatusSchema,
+  workLocation: workLocationSchema,
+  address: addressSchema,
+});
+
+// ========================================
+// PROFILE VALIDATION
+// ========================================
+
+export const profileSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
+  workEmail: workEmailSchema,
+  phoneNumber: phoneNumberSchema,
+
+  department: z
+    .string()
+    .trim()
+    .min(1, "Department is required.")
+    .max(100, "Department cannot exceed 100 characters."),
+
+  jobTitle: jobTitleSchema,
   workLocation: workLocationSchema,
   address: addressSchema,
 });

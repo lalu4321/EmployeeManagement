@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   AlertCircle,
 } from "lucide-react";
+
 import api from "../api/axios";
 import "../styles/employeeProfile.css";
 
@@ -26,10 +27,10 @@ export default function EmployeeProfile() {
     let cancelled = false;
 
     const loadProfile = async () => {
-      const token = sessionStorage.getItem("token");
       const role = sessionStorage.getItem("role");
 
-      if (!token || role?.toLowerCase() !== "employee") {
+      // UI check only. The backend authenticates the cookie.
+      if (role?.toLowerCase() !== "employee") {
         navigate("/login", { replace: true });
         return;
       }
@@ -73,9 +74,15 @@ export default function EmployeeProfile() {
     };
   }, [navigate]);
 
-  const logout = () => {
-    sessionStorage.clear();
-    navigate("/login", { replace: true });
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      sessionStorage.clear();
+      navigate("/login", { replace: true });
+    }
   };
 
   const getValue = (...keys) => {
@@ -113,7 +120,7 @@ export default function EmployeeProfile() {
 
   const imageUrl =
     profilePicture !== "Not provided"
-      ? profilePicture.startsWith("http")
+      ? /^https?:\/\//i.test(profilePicture)
         ? profilePicture
         : `https://localhost:7089${
             profilePicture.startsWith("/")
@@ -122,16 +129,16 @@ export default function EmployeeProfile() {
           }`
       : null;
 
-  const fullName = [
-    getValue("firstName", "FirstName") !== "Not provided"
-      ? getValue("firstName", "FirstName")
-      : "",
-    getValue("lastName", "LastName") !== "Not provided"
-      ? getValue("lastName", "LastName")
-      : "",
-  ]
-    .filter(Boolean)
-    .join(" ") || "Employee";
+  const firstName = getValue("firstName", "FirstName");
+  const lastName = getValue("lastName", "LastName");
+
+  const fullName =
+    [
+      firstName !== "Not provided" ? firstName : "",
+      lastName !== "Not provided" ? lastName : "",
+    ]
+      .filter(Boolean)
+      .join(" ") || "Employee";
 
   const fields = [
     {
@@ -208,6 +215,7 @@ export default function EmployeeProfile() {
 
           <div className="profile-error-actions">
             <button
+              type="button"
               onClick={() => window.location.reload()}
               className="profile-button profile-button-primary"
             >
@@ -215,6 +223,7 @@ export default function EmployeeProfile() {
             </button>
 
             <button
+              type="button"
               onClick={logout}
               className="profile-button profile-button-secondary"
             >
@@ -241,6 +250,7 @@ export default function EmployeeProfile() {
           </div>
 
           <button
+            type="button"
             onClick={logout}
             className="profile-logout-button"
           >

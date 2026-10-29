@@ -26,7 +26,7 @@ namespace EmployeeManagement.Api.Controllers
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(
-            [FromBody] LoginRequest request)
+    [FromBody] LoginRequest request)
         {
             try
             {
@@ -61,11 +61,11 @@ namespace EmployeeManagement.Api.Controllers
 
                 var claims = new[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier,
-                        user.Id.ToString()),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, user.Role.RoleName)
-                };
+            new Claim(
+                ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.RoleName)
+        };
 
                 var signingKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(key));
@@ -80,10 +80,24 @@ namespace EmployeeManagement.Api.Controllers
                     expires: DateTime.UtcNow.AddHours(2),
                     signingCredentials: credentials);
 
-                return Ok(new LoginResponse
+                var tokenString =
+                    new JwtSecurityTokenHandler().WriteToken(token);
+
+                Response.Cookies.Append(
+                    "accessToken",
+                    tokenString,
+                    new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Expires = new DateTimeOffset(token.ValidTo),
+                        Path = "/"
+                    });
+
+                // Never return the JWT in the response body.
+                return Ok(new
                 {
-                    Token = new JwtSecurityTokenHandler()
-                        .WriteToken(token),
                     Email = user.Email,
                     Role = user.Role.RoleName,
                     EmployeeId = user.EmployeeId
@@ -93,7 +107,8 @@ namespace EmployeeManagement.Api.Controllers
             {
                 return StatusCode(500, new
                 {
-                    message = "An unexpected error occurred during login."
+                    message =
+                        "An unexpected error occurred during login."
                 });
             }
         }

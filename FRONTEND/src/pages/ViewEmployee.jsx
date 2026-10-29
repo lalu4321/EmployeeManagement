@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -11,6 +12,7 @@ import {
   CalendarDays,
   ShieldCheck,
 } from "lucide-react";
+
 import api from "../api/axios";
 import "../styles/viewEmployee.css";
 
@@ -58,24 +60,24 @@ export default function ViewEmployee() {
           setEmployee(response.data);
         }
       } catch (err) {
-        if (active) {
-          setError(
-            err.response?.data?.message ||
-              (err.response?.status === 404
-                ? "Employee not found."
-                : err.response?.status === 401
-                  ? "Your session has expired. Please sign in again."
-                  : err.response?.status === 403
-                    ? "You do not have permission to view this employee."
-                    : "Unable to load employee details. Please try again.")
-          );
+        if (!active) return;
 
-          if (err.response?.status === 401) {
-            sessionStorage.clear();
-            localStorage.clear();
-            navigate("/login", { replace: true });
-          }
+        const status = err.response?.status;
+
+        if (status === 401) {
+          sessionStorage.clear();
+          navigate("/login", { replace: true });
+          return;
         }
+
+        setError(
+          err.response?.data?.message ||
+            (status === 404
+              ? "Employee not found."
+              : status === 403
+                ? "You do not have permission to view this employee."
+                : "Unable to load employee details. Please try again.")
+        );
       } finally {
         if (active) {
           setLoading(false);
@@ -127,7 +129,9 @@ export default function ViewEmployee() {
     .filter(Boolean)
     .join(" ");
 
-  const pictureUrl = getProfilePictureUrl(employee.profilePicture);
+  const pictureUrl = getProfilePictureUrl(
+    employee.profilePicture
+  );
 
   const details = [
     { label: "Employee ID", value: employee.id },

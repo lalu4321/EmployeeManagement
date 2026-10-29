@@ -14,7 +14,7 @@ import {
   employmentStatuses,
   getLocalDateString,
   getMinimumJoiningDate,
-} from "../validators/employeeValidator";
+} from "../validators/validation";
 
 export default function AddEmployee() {
   const navigate = useNavigate();

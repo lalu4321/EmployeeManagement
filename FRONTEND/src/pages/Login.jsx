@@ -11,7 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../api/axios";
-import { loginSchema } from "../validators/authValidator";
+import { loginSchema } from "../validators/validation";
 import "../styles/login.css";
 
 export default function Login() {
@@ -41,11 +41,10 @@ export default function Login() {
         password: values.password,
       });
 
-      // Check the required authentication response.
-      if (!data?.token || !data?.role) {
-        setServerError(
-          "The server did not return a token or role."
-        );
+      // The JWT is stored in the HttpOnly cookie by the backend.
+      // Never store the JWT in sessionStorage or localStorage.
+      if (!data?.role) {
+        setServerError("The server did not return a user role.");
         return;
       }
 
@@ -57,11 +56,8 @@ export default function Login() {
         return;
       }
 
-      // Clear the previous tab session.
+      // Store only non-sensitive UI information.
       sessionStorage.clear();
-
-      // Store the authenticated session.
-      sessionStorage.setItem("token", data.token);
       sessionStorage.setItem("role", role);
       sessionStorage.setItem(
         "email",
